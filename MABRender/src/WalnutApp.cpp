@@ -4,6 +4,7 @@
 #include "Walnut/Image.h"
 #include "Walnut/Random.h"
 #include <Walnut/Timer.h>
+#include "../Renderer.h"
 
 using namespace Walnut;
 
@@ -27,8 +28,12 @@ public:
 		m_ViewportWidth = ImGui::GetContentRegionAvail().x;
 		m_ViewportHeight = ImGui::GetContentRegionAvail().y;
 
-		if(m_Image)
-			ImGui::Image(m_Image->GetDescriptorSet(), {(float)m_Image->GetWidth(), (float)m_Image->GetHeight()});
+		auto image = m_Renderer.GetFinalImage();
+		if(image)
+			ImGui::Image(
+				image->GetDescriptorSet(),
+				{ (float)image->GetWidth(), (float)image->GetHeight() },
+				ImVec2(0, 1), ImVec2(1,0));
 
 		ImGui::End();
 		ImGui::PopStyleVar();
@@ -38,23 +43,13 @@ public:
 	void Render() {
 		Timer timer;
 
-		if (!this->m_Image || m_ViewportWidth != m_Image->GetWidth() || m_ViewportHeight != m_Image->GetHeight()) {
-			m_Image = std::make_shared<Image>(this->m_ViewportWidth, this->m_ViewportHeight, ImageFormat::RGBA);
-			delete[] m_ImageData;
-			m_ImageData = new uint32_t[m_ViewportWidth * m_ViewportHeight];
-		}
-
-		for (uint32_t i = 0; i < m_ViewportWidth * m_ViewportHeight; i++) {
-			m_ImageData[i] = (Random::UInt() | 0xff000000);
-		}
-
-		m_Image->SetData(m_ImageData);
+		m_Renderer.OnResize(m_ViewportWidth, m_ViewportHeight);
+		m_Renderer.Render();
 
 		m_lastRenderTime = timer.ElapsedMillis();
 	}
 private:
-	std::shared_ptr<Image> m_Image;
-	uint32_t* m_ImageData = nullptr;
+	Renderer m_Renderer;
 	uint32_t m_ViewportWidth = 0;
 	uint32_t m_ViewportHeight = 0;
 	float m_lastRenderTime = 0.0f;
@@ -63,7 +58,7 @@ private:
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	Walnut::ApplicationSpecification spec;
-	spec.Name = "Walnut Example";
+	spec.Name = "M-Renderer";
 
 	Walnut::Application* app = new Walnut::Application(spec);
 	app->PushLayer<ExampleLayer>();

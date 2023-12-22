@@ -21,14 +21,14 @@ private:
 		glm::vec3 WorldNormal;
 		glm::vec3 WorldPosition;
 		
-		size_t ObjectIndex;
+		int ObjectIndex;
 		bool IsIntoTheObject;
 	};
 
 	glm::vec4 PerPixel(uint32_t x, uint32_t y, std::string& logStr); // RayGen shader
 	HitPayload TraceRay(const Ray& ray, std::string& log);
 
-	HitPayload ClosestHit(const Ray& ray, float hitDistance, bool isIntoTheObject, size_t objectIndex);
+	HitPayload ClosestHit(const Ray& ray, float hitDistance, bool isIntoTheObject, int objectIndex);
 	HitPayload Miss(const Ray& ray);
 
 private:

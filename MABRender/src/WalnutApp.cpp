@@ -18,11 +18,19 @@ public:
 	ExampleLayer() :
 		m_camera(45.0f, 0.1f, 100.0f) 
 	{
+		MaterialDescription& pinkSphere = m_Scene.MaterialList.emplace_back();
+		pinkSphere.Albedo = { 1.0f, 0.0f, 1.0f };
+		pinkSphere.Roughness = 0.0f;
+
+		MaterialDescription& blueSphere = m_Scene.MaterialList.emplace_back();
+		blueSphere.Albedo = { 0.2f, 0.3f, 0.1f };
+		blueSphere.Roughness = 0.1f;
+
 		{
 			Sphere sphere;
 			sphere.Position = {0.0f, 0.0f, 0.0f};
 			sphere.Radius = 1.0f;
-			sphere.Material.Albedo = { 0.0f, 1.0f, 1.0f };
+			sphere.MaterialIndex = 0;
 			m_Scene.SphereList.push_back(sphere);
 		}
 
@@ -30,7 +38,7 @@ public:
 			Sphere sphere;
 			sphere.Position = { 0.0f, -101.0f, 0.0f };
 			sphere.Radius = 100.0f;
-			sphere.Material.Albedo = { 0.5f, 1.0f, 0.3f };
+			sphere.MaterialIndex = 1;
 			m_Scene.SphereList.push_back(sphere);
 		}
 	}
@@ -58,21 +66,33 @@ public:
 			
 			std::string posStr = "Position Object " + objectIdStr;
 			std::string radiusStr = "Radius Object " + objectIdStr;
-			std::string albedoStr = "Albedo Object " + objectIdStr;
-			std::string roughness = "Roughness Object " + objectIdStr;
-			std::string metalic = "Metalic Object " + objectIdStr;
+			std::string materialIndexStr = "Material Index Object " + objectIdStr;
 
 			ImGui::PushID(i);
 
 			ImGui::DragFloat3(posStr.c_str(), glm::value_ptr(sphere.Position), 0.1f);
 			ImGui::DragFloat(radiusStr.c_str(), &sphere.Radius, 0.1f);
-			ImGui::ColorEdit3(albedoStr.c_str(), glm::value_ptr(sphere.Material.Albedo));
-			ImGui::DragFloat(roughness.c_str(), &sphere.Material.Roughness);
-			ImGui::DragFloat(metalic.c_str(), &sphere.Material.Metalic);
+			ImGui::DragInt(materialIndexStr.c_str(), &sphere.MaterialIndex, 1, 0, (int)m_Scene.MaterialList.size() - 1);
 			ImGui::Separator();
 
 			ImGui::PopID();
 		}
+
+		for (size_t t = 0; t < m_Scene.MaterialList.size(); t++) {
+
+			std::string objectIdStr = std::to_string(t);
+			std::string albedoStr = "Albedo Material " + objectIdStr;
+			std::string roughness = "Roughness Material " + objectIdStr;
+			std::string metalic = "Metalic Material " + objectIdStr;
+
+			ImGui::PushID(t);
+			ImGui::ColorEdit3(albedoStr.c_str(), glm::value_ptr(m_Scene.MaterialList[t].Albedo));
+			ImGui::DragFloat(roughness.c_str(), &m_Scene.MaterialList[t].Roughness, 0.05f, 0.0f, 1.0f);
+			ImGui::DragFloat(metalic.c_str(), &m_Scene.MaterialList[t].Metalic, 0.05f, 0.0f, 1.0f);
+			ImGui::Separator();
+			ImGui::PopID();
+		}
+
 		ImGui::End();
 
 		ImGui::Begin("Logger");

@@ -21,16 +21,16 @@ public:
 		{
 			Sphere sphere;
 			sphere.Position = {0.0f, 0.0f, 0.0f};
-			sphere.Radius = 0.5f;
-			sphere.Albedo = { 0.0f, 1.0f, 1.0f };
+			sphere.Radius = 1.0f;
+			sphere.Material.Albedo = { 0.0f, 1.0f, 1.0f };
 			m_Scene.SphereList.push_back(sphere);
 		}
 
 		{
 			Sphere sphere;
-			sphere.Position = { -0.1f, 0.2f, -3.0f };
-			sphere.Radius = 1.0f;
-			sphere.Albedo = { 0.5f, 1.0f, 0.3f };
+			sphere.Position = { 0.0f, -101.0f, 0.0f };
+			sphere.Radius = 100.0f;
+			sphere.Material.Albedo = { 0.5f, 1.0f, 0.3f };
 			m_Scene.SphereList.push_back(sphere);
 		}
 	}
@@ -59,12 +59,16 @@ public:
 			std::string posStr = "Position Object " + objectIdStr;
 			std::string radiusStr = "Radius Object " + objectIdStr;
 			std::string albedoStr = "Albedo Object " + objectIdStr;
+			std::string roughness = "Roughness Object " + objectIdStr;
+			std::string metalic = "Metalic Object " + objectIdStr;
 
 			ImGui::PushID(i);
 
 			ImGui::DragFloat3(posStr.c_str(), glm::value_ptr(sphere.Position), 0.1f);
 			ImGui::DragFloat(radiusStr.c_str(), &sphere.Radius, 0.1f);
-			ImGui::ColorEdit3(albedoStr.c_str(), glm::value_ptr(sphere.Albedo));
+			ImGui::ColorEdit3(albedoStr.c_str(), glm::value_ptr(sphere.Material.Albedo));
+			ImGui::DragFloat(roughness.c_str(), &sphere.Material.Roughness);
+			ImGui::DragFloat(metalic.c_str(), &sphere.Material.Metalic);
 			ImGui::Separator();
 
 			ImGui::PopID();

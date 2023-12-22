@@ -16,9 +16,27 @@ public:
 	void Render(const Scene& scene,const Camera& camera, std::string& log);
 	std::shared_ptr<Walnut::Image> GetFinalImage() const { return m_FinalImage; };
 private:
-	glm::vec4 RayTrace(const Scene& scene, const Ray& ray, std::string& log);
+	struct HitPayload {
+		float HitDistance;
+		glm::vec3 WorldNormal;
+		glm::vec3 WorldPosition;
+		
+		size_t ObjectIndex;
+		bool IsIntoTheObject;
+	};
+
+	glm::vec4 PerPixel(uint32_t x, uint32_t y, std::string& logStr); // RayGen shader
+	HitPayload TraceRay(const Ray& ray, std::string& log);
+
+	HitPayload ClosestHit(const Ray& ray, float hitDistance, bool isIntoTheObject, size_t objectIndex);
+	HitPayload Miss(const Ray& ray);
+
 private:
 	std::shared_ptr<Walnut::Image> m_FinalImage;
+
+	const Scene* m_ActiveScene = nullptr;
+	const Camera* m_ActiveCamera = nullptr;
+
 	uint32_t* m_ImageData = nullptr;
 };
 

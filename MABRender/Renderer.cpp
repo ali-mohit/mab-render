@@ -20,6 +20,11 @@ void Renderer::OnResize(uint32_t width, uint32_t height)
 	delete[] m_ImageData;
 	m_ImageData = new uint32_t[width * height];
 
+	delete[] m_AccumulationData;
+	m_AccumulationData = new glm::vec4[width * height];
+
+	ResetFrameIndex();
+
 }
 
 
@@ -28,17 +33,33 @@ void Renderer::Render(const Scene& scene, const Camera& camera, std::string& log
 	m_ActiveScene = &scene;
 	m_ActiveCamera = &camera;
 	
+	if (m_FramIndex == 1)
+		memset(m_AccumulationData, 0, m_FinalImage->GetHeight() * m_FinalImage->GetWidth() * sizeof(glm::vec4));
+
 	// render every pixel
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++) {
 		for (uint32_t x = 0; x < m_FinalImage->GetWidth(); x++) {
-			glm::vec4 color = PerPixel(x, y, logStr);
+			glm::vec4 newColor = PerPixel(x, y, logStr);
+			
+			glm::vec4 oldAvgColor = m_AccumulationData[x + y * m_FinalImage->GetWidth()];
 
-			color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
-			m_ImageData[x + y * m_FinalImage->GetWidth()] = Utilities::ConvertToRGBA(color);
+			oldAvgColor *= (float)(m_FramIndex - 1) / (float)(m_FramIndex);
+			newColor /= m_FramIndex;
+			glm::vec4 avgColor = newColor + oldAvgColor;
+			m_AccumulationData[x + y * m_FinalImage->GetWidth()] = avgColor;
+
+			avgColor = glm::clamp(avgColor, glm::vec4(0.0f), glm::vec4(1.0f));
+			m_ImageData[x + y * m_FinalImage->GetWidth()] = Utilities::ConvertToRGBA(avgColor);
 		}
 	}
 
 	m_FinalImage->SetData(m_ImageData);
+
+	if (m_Settings.Accumulate)
+		m_FramIndex++;
+	else
+		m_FramIndex = 1;
+	
 }
 
 glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, std::string& logStr)

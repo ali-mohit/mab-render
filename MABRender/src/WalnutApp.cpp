@@ -23,7 +23,7 @@ public:
 		pinkSphere.Roughness = 0.0f;
 
 		MaterialDescription& blueSphere = m_Scene.MaterialList.emplace_back();
-		blueSphere.Albedo = { 0.2f, 0.3f, 0.1f };
+		blueSphere.Albedo = { 0.02f, 0.34f, 0.58f };
 		blueSphere.Roughness = 0.1f;
 
 		{
@@ -45,16 +45,23 @@ public:
 	
 	virtual void OnUpdate(float ts) override
 	{
-		m_camera.OnUpdate(ts);
+		if (m_camera.OnUpdate(ts))
+		{
+			m_Renderer.ResetFrameIndex();
+		}
 	}
 	virtual void OnUIRender() override
 	{
 		ImGui::Begin("Settings");
 		ImGui::Text("Last render: %.3fms", m_lastRenderTime);
 
-		if (ImGui::Button("Render")) {
+		if (ImGui::Button("Render"))
 			Render();
-		}
+
+		ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
+		if (ImGui::Button("Reset")) 
+			m_Renderer.ResetFrameIndex();
+		
 
 		ImGui::End();
 

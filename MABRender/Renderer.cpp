@@ -2,7 +2,7 @@
 #include "Renderer.h"
 #include "Utilities.cpp"
 #include "Walnut/Random.h"
-
+#include "execution"
 
 void Renderer::OnResize(uint32_t width, uint32_t height)
 {
@@ -25,21 +25,49 @@ void Renderer::OnResize(uint32_t width, uint32_t height)
 
 	ResetFrameIndex();
 
+	m_ImageHorizontalItr.resize(width);
+	m_ImageVerticalItr.resize(height);
+
+	for (size_t t = 0; t < width; t++)
+		m_ImageHorizontalItr[t] = t;
+
+	for (size_t t = 0; t < height; t++)
+		m_ImageVerticalItr[t] = t;
 }
 
 
-void Renderer::Render(const Scene& scene, const Camera& camera, std::string& logStr)
+void Renderer::Render(const Scene& scene, const Camera& camera)
 {
 	m_ActiveScene = &scene;
 	m_ActiveCamera = &camera;
 	
 	if (m_FramIndex == 1)
 		memset(m_AccumulationData, 0, m_FinalImage->GetHeight() * m_FinalImage->GetWidth() * sizeof(glm::vec4));
+#define MT 1
+#if MT
+	std::for_each(std::execution::par, m_ImageVerticalItr.begin(), m_ImageVerticalItr.end(), 
+		[this](uint32_t y){
+			std::for_each(std::execution::par, m_ImageHorizontalItr.begin(), m_ImageHorizontalItr.end(),
+				[this, y](uint32_t x) {
+					glm::vec4 newColor = PerPixel(x, y);
 
+					glm::vec4 oldAvgColor = m_AccumulationData[x + y * m_FinalImage->GetWidth()];
+
+					oldAvgColor *= (float)(m_FramIndex - 1) / (float)(m_FramIndex);
+					newColor /= m_FramIndex;
+					glm::vec4 avgColor = newColor + oldAvgColor;
+					m_AccumulationData[x + y * m_FinalImage->GetWidth()] = avgColor;
+
+					avgColor = glm::clamp(avgColor, glm::vec4(0.0f), glm::vec4(1.0f));
+					m_ImageData[x + y * m_FinalImage->GetWidth()] = Utilities::ConvertToRGBA(avgColor);
+				});
+		}
+	);
+#else
 	// render every pixel
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++) {
 		for (uint32_t x = 0; x < m_FinalImage->GetWidth(); x++) {
-			glm::vec4 newColor = PerPixel(x, y, logStr);
+			glm::vec4 newColor = PerPixel(x, y);
 			
 			glm::vec4 oldAvgColor = m_AccumulationData[x + y * m_FinalImage->GetWidth()];
 
@@ -52,7 +80,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera, std::string& log
 			m_ImageData[x + y * m_FinalImage->GetWidth()] = Utilities::ConvertToRGBA(avgColor);
 		}
 	}
-
+#endif
 	m_FinalImage->SetData(m_ImageData);
 
 	if (m_Settings.Accumulate)
@@ -62,7 +90,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera, std::string& log
 	
 }
 
-glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, std::string& logStr)
+glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 {
 	Ray ray;
 	ray.Origin = m_ActiveCamera->GetPosition();
@@ -74,7 +102,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, std::string& logStr)
 	float multiplier = 1.0f;
 
 	for (uint32_t i = 0; i < bounces; i++) {
-		Renderer::HitPayload payload = TraceRay(ray, logStr);
+		Renderer::HitPayload payload = TraceRay(ray);
 
 		// Check if miss happened
 		if (payload.HitDistance < 0.0f) {
@@ -113,7 +141,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y, std::string& logStr)
 	return glm::vec4(finalColor, 1.0f);
 }
 
-Renderer::HitPayload Renderer::TraceRay(const Ray& ray, std::string& logStr)
+Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
 {
 	//logStr = std::to_string(t_closest);
 

@@ -103,7 +103,7 @@ public:
 		ImGui::End();
 
 		ImGui::Begin("Logger");
-		ImGui::Text("Logs: %s", m_LogString.c_str());
+		ImGui::Text("Logs: %s", m_Renderer.GetLogMessage().c_str());
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f,0.0f));
@@ -129,7 +129,7 @@ public:
 
 		m_Renderer.OnResize(m_ViewportWidth, m_ViewportHeight);
 		m_camera.OnResize(m_ViewportWidth, m_ViewportHeight);
-		m_Renderer.Render(m_Scene, m_camera, m_LogString);
+		m_Renderer.Render(m_Scene, m_camera);
 
 		m_lastRenderTime = timer.ElapsedMillis();
 		
@@ -140,7 +140,6 @@ private:
 	Camera m_camera;
 	uint32_t m_ViewportWidth = 0;
 	uint32_t m_ViewportHeight = 0;
-	std::string m_LogString = "";
 	float m_lastRenderTime = 0.0f;
 };
 

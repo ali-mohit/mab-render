@@ -52,20 +52,26 @@ public:
 	}
 	virtual void OnUIRender() override
 	{
+		bool resetFrameIndex = false;
+
 		ImGui::Begin("Settings");
 		ImGui::Text("Last render: %.3fms", m_lastRenderTime);
 
-		if (ImGui::Button("Render"))
+		if (ImGui::Button("Render")) {
+			m_Renderer.ResetFrameIndex();
+			resetFrameIndex = true;
 			Render();
+		}
+
 
 		ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
-		if (ImGui::Button("Reset")) 
-			m_Renderer.ResetFrameIndex();
+		if (ImGui::Button("Reset"))
+			resetFrameIndex = true;
 		
-
 		ImGui::End();
 
 		ImGui::Begin("Scene");
+		
 		for (size_t i = 0; i < m_Scene.SphereList.size(); i++) {
 			Sphere& sphere = m_Scene.SphereList[i];
 
@@ -77,9 +83,12 @@ public:
 
 			ImGui::PushID(i);
 
-			ImGui::DragFloat3(posStr.c_str(), glm::value_ptr(sphere.Position), 0.1f);
-			ImGui::DragFloat(radiusStr.c_str(), &sphere.Radius, 0.1f);
-			ImGui::DragInt(materialIndexStr.c_str(), &sphere.MaterialIndex, 1, 0, (int)m_Scene.MaterialList.size() - 1);
+			if (ImGui::DragFloat3(posStr.c_str(), glm::value_ptr(sphere.Position), 0.1f) ||
+				ImGui::DragFloat(radiusStr.c_str(), &sphere.Radius, 0.1f) ||
+				ImGui::DragInt(materialIndexStr.c_str(), &sphere.MaterialIndex, 1, 0, (int)m_Scene.MaterialList.size() - 1)) {
+				resetFrameIndex = true;
+			}
+
 			ImGui::Separator();
 
 			ImGui::PopID();
@@ -93,9 +102,11 @@ public:
 			std::string metalic = "Metalic Material " + objectIdStr;
 
 			ImGui::PushID(t);
-			ImGui::ColorEdit3(albedoStr.c_str(), glm::value_ptr(m_Scene.MaterialList[t].Albedo));
-			ImGui::DragFloat(roughness.c_str(), &m_Scene.MaterialList[t].Roughness, 0.05f, 0.0f, 1.0f);
-			ImGui::DragFloat(metalic.c_str(), &m_Scene.MaterialList[t].Metalic, 0.05f, 0.0f, 1.0f);
+			if (ImGui::ColorEdit3(albedoStr.c_str(), glm::value_ptr(m_Scene.MaterialList[t].Albedo)) ||
+				ImGui::DragFloat(roughness.c_str(), &m_Scene.MaterialList[t].Roughness, 0.05f, 0.0f, 1.0f) ||
+				ImGui::DragFloat(metalic.c_str(), &m_Scene.MaterialList[t].Metalic, 0.05f, 0.0f, 1.0f)) {
+				resetFrameIndex = true;
+			}
 			ImGui::Separator();
 			ImGui::PopID();
 		}
@@ -121,6 +132,9 @@ public:
 
 		ImGui::End();
 		ImGui::PopStyleVar();
+
+		if(resetFrameIndex)
+			m_Renderer.ResetFrameIndex();
 
 		Render();
 	}
